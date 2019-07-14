@@ -34,11 +34,11 @@ object Application extends App {
         println(system.status())
         system.step()
       case message if message.startsWith("pickup") =>
-        val argsList = message.split(" ")
-        this.handlePickup(argsList, system, numberOfFloors)
+        val pickupArgs = message.split(" ")
+        this.handlePickup(pickupArgs, system, numberOfFloors)
       case message if message.startsWith("update") =>
-        val argsList = message.split(" ")
-        this.handleUpdate(argsList, system, numberOfElevators, numberOfFloors)
+        val updateArgs = message.split(" ")
+        this.handleUpdate(updateArgs, system, numberOfElevators, numberOfFloors)
       case "help" =>
         this.printUsage()
         system.step()
@@ -49,17 +49,18 @@ object Application extends App {
   }
 
   private def handlePickup(args: Array[String], system: ElevatorSystem, numberOfFloors: Int): Unit = {
-    try {
-      val sourceFloor = args(1).toInt
-      val directionOption: Direction.Value = Direction.getByName(args(2)).getOrElse(throw IllegalArgumentException)
-      if (sourceFloor < 0 || sourceFloor > numberOfFloors) {
-        throw new IllegalArgumentException
-      }
-      system.pickup(sourceFloor, directionOption)
-    } catch {
-      case _: Throwable =>
-        this.printUsage()
+    //    try {
+    val sourceFloor = args(1).toInt
+    val directionOption: Direction.Value = Direction.getByName(args(2)).getOrElse(throw new IllegalArgumentException)
+    if (sourceFloor < 0 || sourceFloor > numberOfFloors) {
+      throw new IllegalArgumentException
     }
+    system.pickup(sourceFloor, directionOption)
+    //    } catch {
+    //      case throwable: Throwable =>
+    //        throwable.getStackTrace
+    //        this.printUsage()
+    //    }
   }
 
   private def handleUpdate(args: Array[String], system: ElevatorSystem, numberOfElevators: Int, numberOfFloors: Int): Unit = {
@@ -68,7 +69,7 @@ object Application extends App {
       val currentFloor = args(2).toInt
       val targetFloors: Array[Int] = args.drop(3).map(arg => arg.toInt).filter(floor => 0 to numberOfFloors contains floor)
       if (!(0 to numberOfElevators contains elevatorId) || !(0 to numberOfFloors contains currentFloor) || targetFloors.isEmpty) {
-        throw IllegalArgumentException
+        throw new IllegalArgumentException
       }
       system.update(elevatorId, currentFloor, targetFloors.toList)
     } catch {

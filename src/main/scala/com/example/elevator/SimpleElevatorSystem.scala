@@ -5,12 +5,12 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
 
   override def pickup(sourceFloor: Int, direction: Direction.Value): Unit = {
     val chosenElevator: SingleElevatorState = this.getNearestElevator(sourceFloor, direction)
-    this.update(chosenElevator.elevatorIndex(), chosenElevator.currentFloor, List(sourceFloor))
+    this.update(chosenElevator.elevatorIndex(), chosenElevator.currentFloor, List(sourceFloor), empty = true)
   }
 
-  override def update(elevatorId: Int, currentFloor: Int, targetFloor: List[Int]): Unit = {
+  override def update(elevatorId: Int, currentFloor: Int, targetFloor: List[Int], empty: Boolean = false): Unit = {
     val elevator = elevatorEngineState(elevatorId)
-    elevatorEngineState = elevatorEngineState.updated(elevatorId, new SingleElevatorState(elevatorId, currentFloor, elevator.targetFloor.appendedAll(targetFloor), false))
+    elevatorEngineState = elevatorEngineState.updated(elevatorId, new SingleElevatorState(elevatorId, currentFloor, elevator.targetFloor.appendedAll(targetFloor), empty))
   }
 
   override def step(): List[SingleElevatorState] = {
@@ -21,15 +21,20 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
   override def status(): List[SingleElevatorState] = elevatorEngineState
 
   private def generateInitialState(numberOfElevators: Int): List[SingleElevatorState] =
-    List.tabulate(numberOfElevators)(index => new SingleElevatorState(index, 0, List(0), true))
+    List.tabulate(numberOfElevators)(index => new SingleElevatorState(index, 0, List.empty, true))
 
   private def updateSingleElevatorState(singleElevatorState: SingleElevatorState): SingleElevatorState = {
-    val floorDiff = this.calculateFloorDiff(singleElevatorState.currentFloor, singleElevatorState.targetFloor(0))
-    if (floorDiff == 0) {
-      this.handleElevatorArrived(singleElevatorState)
+    if (singleElevatorState.targetFloor.nonEmpty) {
+      val floorDiff = this.calculateFloorDiff(singleElevatorState.currentFloor, singleElevatorState.targetFloor(0))
+      if (floorDiff == 0) {
+        this.handleElevatorArrived(singleElevatorState)
+      }
+      else {
+        singleElevatorState.currentFloor += floorDiff
+        singleElevatorState
+      }
     }
     else {
-      singleElevatorState.currentFloor += floorDiff
       singleElevatorState
     }
   }
@@ -44,16 +49,18 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
     }
     else {
       println(s"Elevator ${elevatorState.elevatorIndex()} arrived on floor ${elevatorState.targetFloor} and passenger left")
-      elevatorState.empty = true
-      elevatorState.targetFloor = elevatorState.targetFloor.drop(1)
+      if (elevatorState.targetFloor.isEmpty) {
+        elevatorState.empty = true
+      }
     }
+    elevatorState.targetFloor = elevatorState.targetFloor.drop(1)
     elevatorState
   }
 
   private def getNearestElevator(sourceFloor: Int, direction: Direction.Value): SingleElevatorState = {
     val filteredList = this.elevatorEngineState.filter(elevator => this.emptyOrHeadingInDirection(elevator, direction))
     if (filteredList.isEmpty) {
-      filteredList(0)
+      this.elevatorEngineState(0)
     }
     else {
       filteredList.min(Ordering.by((elem: SingleElevatorState) => math.abs(elem.currentFloor - sourceFloor)))

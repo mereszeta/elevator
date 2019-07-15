@@ -21,6 +21,10 @@ sbt "run [number_of_elevators] [number_of_floors]"
 ```bash
 help
 ```
+- run tests:
+```bash
+sbt test
+```
 ## Solution description
 When elevator is ordered system, system is choosing closest elevator from set satisfying one of the criteria: Elevator is currently not used or elevator is used and heading in direction of a pickup.
  When elevator arrives, user can specify multiple target floors.

@@ -10,7 +10,7 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
 
   override def update(elevatorId: Int, currentFloor: Int, targetFloor: List[Int], empty: Boolean = false): Unit = {
     val elevator = elevatorEngineState(elevatorId)
-    elevatorEngineState = elevatorEngineState.updated(elevatorId, new SingleElevatorState(elevatorId, currentFloor, elevator.targetFloor.appendedAll(targetFloor), empty))
+    elevatorEngineState = elevatorEngineState.updated(elevatorId, new SingleElevatorState(elevatorId, currentFloor, elevator.targetFloors.appendedAll(targetFloor), empty))
   }
 
   override def step(): List[SingleElevatorState] = {
@@ -24,8 +24,8 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
     List.tabulate(numberOfElevators)(index => new SingleElevatorState(index, 0, List.empty, true))
 
   private def updateSingleElevatorState(singleElevatorState: SingleElevatorState): SingleElevatorState = {
-    if (singleElevatorState.targetFloor.nonEmpty) {
-      val floorDiff = this.calculateFloorDiff(singleElevatorState.currentFloor, singleElevatorState.targetFloor(0))
+    if (singleElevatorState.targetFloors.nonEmpty) {
+      val floorDiff = this.calculateFloorDiff(singleElevatorState.currentFloor, singleElevatorState.targetFloors(0))
       if (floorDiff == 0) {
         this.handleElevatorArrived(singleElevatorState)
       }
@@ -44,16 +44,18 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
   }
 
   private def handleElevatorArrived(elevatorState: SingleElevatorState): SingleElevatorState = {
+    val targetFloor = elevatorState.targetFloors(0)
+    elevatorState.targetFloors = elevatorState.targetFloors.drop(1)
     if (elevatorState.empty) {
-      println(s"Elevator ${elevatorState.elevatorIndex()} arrived on floor ${elevatorState.targetFloor} and is ready for use")
+      println(s"Elevator ${elevatorState.elevatorIndex()} arrived on floor $targetFloor and is ready for use")
     }
     else {
-      println(s"Elevator ${elevatorState.elevatorIndex()} arrived on floor ${elevatorState.targetFloor} and passenger left")
-      if (elevatorState.targetFloor.isEmpty) {
+      println(s"Elevator ${elevatorState.elevatorIndex()} arrived on floor $targetFloor and passenger left")
+      println(elevatorState)
+      if (elevatorState.targetFloors.isEmpty) {
         elevatorState.empty = true
       }
     }
-    elevatorState.targetFloor = elevatorState.targetFloor.drop(1)
     elevatorState
   }
 
@@ -68,10 +70,10 @@ class SimpleElevatorSystem(val numberOfElevators: Int) extends ElevatorSystem {
   }
 
   private def emptyOrHeadingInDirection(elevator: SingleElevatorState, direction: Direction.Value): Boolean = {
-    (elevator.empty && elevator.targetFloor.isEmpty) || (!elevator.empty && direction == this.calculateDirection(elevator))
+    (elevator.empty && elevator.targetFloors.isEmpty) || (!elevator.empty && direction == this.calculateDirection(elevator))
   }
 
   private def calculateDirection(state: SingleElevatorState): Direction.Value = {
-    if (state.currentFloor < state.targetFloor(0)) Direction.UP else Direction.DOWN
+    if (state.currentFloor < state.targetFloors(0)) Direction.UP else Direction.DOWN
   }
 }
